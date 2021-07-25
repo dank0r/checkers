@@ -42,7 +42,7 @@ export default DragSource('piece2square', {
         const item = monitor.getItem();
         const dropResult = monitor.getDropResult();
         if (dropResult) {
-            alert(`You dropped ${item.id} into ${dropResult.pos}!`);
+            // alert(`You dropped ${item.id} into ${dropResult.pos}!`);
         }
     },
 }, (connect, monitor) => {

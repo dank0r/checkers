@@ -2,7 +2,7 @@ import Piece from '../Piece';
 import { DropTarget } from 'react-dnd';
 import styles from './index.module.css';
 
-function Square({isBlack, id, movePiece, boardState, canDrop, isOver, connectDropTarget}) {
+function Square({isBlack, id, movePiece, boardState, piecesState, canDrop, isOver, connectDropTarget}) {
     return connectDropTarget(
         <div
             ref={connectDropTarget}
@@ -14,11 +14,14 @@ function Square({isBlack, id, movePiece, boardState, canDrop, isOver, connectDro
 
 export default DropTarget('piece2square', {
     canDrop: (props) => {
-
+        return true;
     },
     drop: (props) => ({ pos: props.id }),
     hover: (props, monitor) => {
-        props.movePiece(monitor.getItem().id, props.id);
+        // console.log('hovering');
+        if(props.piecesState.find(p => p.id === monitor.getItem().id).pos !== props.id) {
+            props.movePiece(monitor.getItem().id, props.id);
+        }
     },
 }, (connect, monitor) => ({
     connectDropTarget: connect.dropTarget(),
