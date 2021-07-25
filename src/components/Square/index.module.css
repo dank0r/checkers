@@ -1,5 +1,7 @@
 .wrapper {
     display: flex;
+    justify-content: center;
+    align-items: center;
     flex-grow: 1;
     flex-basis: 12.4%;
     border: 1px solid black;
