@@ -34,40 +34,73 @@ function App() {
     let id = 1;
     for(let i = 0; i < 24; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i, isDragging: false, startPos: i});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'black'});
             id++;
         }
     }
     for(let i = 40; i < 64; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i, isDragging: false, startPos: i});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'white'});
             id++;
         }
     }
 
     const [piecesState, setPiecesState] = useState(piecesInitState);
+    const [chainDraftHistory, setChainDraftHistory] = useState([piecesInitState]);
 
-    // useEffect(() => {
-    //     setTimeout(() => {
-    //         setPiecesState(piecesState.map(ps => ps.id === 1 ? {...ps, pos: ps.pos+1} : ps));
-    //     }, 3000)
-    // }, [piecesState]);
+    useEffect(() => {
+        setPiecesState(chainDraftHistory[chainDraftHistory.length - 1]);
+    }, [chainDraftHistory]);
 
     function movePiece(id, pos) {
-        setPiecesState(piecesState.map(p => p.id === id ? {...p, pos} : p));
+        let newPiecesState = piecesState.map(p => p.id === id ? {...p, pos} : p);
+        // if this draft move is extended
+        if([(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => pos + n === piecesState.find(p => p.id === id).pos)) {
+            if(pos + (+8 +1)*2 === piecesState.find(p => p.id === id).pos) {
+                newPiecesState = newPiecesState.map(p => p.pos === pos + (+8 +1) ? {...p, pos: p.color === 'black' ? 100 : 200} : p)
+            }
+            if(pos + (+8 -1)*2 === piecesState.find(p => p.id === id).pos) {
+                newPiecesState = newPiecesState.map(p => p.pos === pos + (+8 -1) ? {...p, pos: p.color === 'black' ? 100 : 200} : p)
+            }
+            if(pos + (-8 +1)*2 === piecesState.find(p => p.id === id).pos) {
+                newPiecesState = newPiecesState.map(p => p.pos === pos + (-8 +1) ? {...p, pos: p.color === 'black' ? 100 : 200} : p)
+            }
+            if(pos + (-8 -1)*2 === piecesState.find(p => p.id === id).pos) {
+                newPiecesState = newPiecesState.map(p => p.pos === pos + (-8 -1) ? {...p, pos: p.color === 'black' ? 100 : 200} : p)
+            }
+        }
+        // if this draft move is rollback to the previous
+        if(chainDraftHistory.length >= 2 && chainDraftHistory[chainDraftHistory.length - 2].find(p => p.id === id).pos === pos) {
+            setChainDraftHistory(chainDraftHistory.slice(0, -1));
+        } else {
+            setChainDraftHistory(chainDraftHistory.concat([newPiecesState]));
+        }
+        // if this draft move is extended
+        // if([(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => pos + n === piecesState.find(p => p.id === id).pos)) {
+        //     console.log('extended!!!')
+        //     // if this draft move is rollback to the previous
+        //     if(chainDraftHistory.length >= 2 && chainDraftHistory[chainDraftHistory.length - 2].find(p => p.id === id).pos === pos) {
+        //         setChainDraftHistory(chainDraftHistory.slice(0, -1));
+        //     } else {
+        //         setChainDraftHistory(chainDraftHistory.concat([newPiecesState]));
+        //     }
+        // } else {
+        //     setChainDraftHistory(chainDraftHistory.concat([newPiecesState]));
+        // }
+
     }
 
     function setDragging(id, val) {
-        setPiecesState(piecesState.map(p => p.id === id ? {...p, isDragging: val, startPos: val ? p.startPos : p.pos} : p));
-        // if(val === false) {
-        //     setPiecesState(piecesState.map(p => p.id === id ? {...p, prevPos: -100} : p));
-        // }
+        setChainDraftHistory(chainDraftHistory.map((h, i) => i === chainDraftHistory.length - 1 ? piecesState.map(p => p.id === id ? {...p, isDragging: val, startPos: val ? p.startPos : p.pos} : p) : h));
+        if(val === false) {
+            setChainDraftHistory([piecesState.map(p => p.id === id ? {...p, isDragging: val, startPos: val ? p.startPos : p.pos} : p)]);
+        }
     }
 
     return (
         <DndProvider backend={HTML5Backend}>
             <div className={styles.wrapper}>
-                <Board movePiece={movePiece} setDragging={setDragging} boardState={boardState} piecesState={piecesState} />
+                <Board chainDraftHistory={chainDraftHistory} movePiece={movePiece} setDragging={setDragging} boardState={boardState} piecesState={piecesState} />
             </div>
         </DndProvider>
     );

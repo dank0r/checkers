@@ -3,28 +3,43 @@ import styles from './index.module.css';
 import {Motion, spring} from 'react-motion';
 import { DragSource, DropTarget } from 'react-dnd';
 
-function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget, setDragging}) {
-    console.log(isDragging);
+function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget, setDragging, piecesState}) {
+    // console.log(isDragging);
     // useEffect(() => {
     //     setDragging(id);
     // }, [isDragging]);
     // const [x, setX] = useState(10);
     // setInterval(() => setX(x+10), 1000)
     // console.log(id, pos);
-    let x = (pos % 8)*82 + 15;
-    let y = Math.floor(pos / 8)*82 + 15;
+    let x, y, scale;
+    if(pos !== 100 && pos !== 200) {
+        x = (pos % 8)*82 + 15;
+        y = Math.floor(pos / 8)*82 + 15;
+        scale = 1;
+    }
+    if(pos === 100) {
+        x = (piecesState.filter(p => p.pos === 100).map(p => p.id).indexOf(id))*30;
+        y = 8*82;
+        scale = 0.5;
+    }
+    if(pos === 200) {
+        x = (piecesState.filter(p => p.pos === 200).map(p => p.id).indexOf(id))*30;
+        y = -50;
+        scale = 0.5;
+    }
+
     // x = 100;
     // y = 100;
-    return (<Motion style={{x: spring(x), y: spring(y), z: 10}}>
-            {({x, y, z}) =>
+    return (<Motion style={{x: spring(x), y: spring(y), scale: spring(scale)}}>
+            {({x, y, scale}) =>
                 connectDropTarget(connectDragSource(<div
                     className={styles.wrapper}
                     style={{
                         backgroundColor: id > 12 ? 'white' : 'black',
                         borderColor: id > 12 ? 'black' : 'white',
                         // top: `${x}px`,
-                        WebkitTransform: `translate3d(${x}px, 0, 0)`,
-                        transform: `translate3d(${x}px, ${y}px, 0)`,
+                        WebkitTransform: `translate3d(${x}px, 0, 0) scale(${scale})`,
+                        transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
                     }}>
                     <div
                         className={styles.inner}
@@ -40,9 +55,9 @@ function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget,
 
 const Wrapper = DragSource('piece2square', {
     beginDrag: (props) => {
-        console.log('begin');
+        // console.log('begin');
         props.setDragging(props.id, true);
-        console.log('position:', props.pos);
+        // console.log('position:', props.pos);
         return { id: props.id, pos: props.pos };
     },
     endDrag(props, monitor) {
