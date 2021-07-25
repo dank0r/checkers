@@ -1,8 +1,9 @@
 import {useState} from 'react';
 import styles from './index.module.css';
 import {Motion, spring} from 'react-motion';
+import { DragSource } from 'react-dnd';
 
-function Piece({id, pos}) {
+function Piece({id, pos, move, isDragging, connectDragSource}) {
     // const [x, setX] = useState(10);
     // setInterval(() => setX(x+10), 1000)
     // console.log(id, pos);
@@ -10,10 +11,9 @@ function Piece({id, pos}) {
     let y = Math.floor(pos / 8)*82 + 15;
     // x = 100;
     // y = 100;
-    return (
-        <Motion style={{x: spring(x), y: spring(y), z: 10}}>
+    return (<Motion style={{x: spring(x), y: spring(y), z: 10}}>
             {({x, y, z}) =>
-                <div
+                connectDragSource(<div
                     className={styles.wrapper}
                     style={{
                         backgroundColor: id > 12 ? 'white' : 'black',
@@ -28,10 +28,26 @@ function Piece({id, pos}) {
                             backgroundColor: id > 12 ? 'white' : 'black',
                             borderColor: id > 12 ? 'black' : 'white'
                         }}/>
-                </div>
+                </div>)
             }
         </Motion>
     );
 }
 
-export default Piece;
+export default DragSource('piece2square', {
+    beginDrag: (props) => {
+        return { id: props.id };
+    },
+    endDrag(props, monitor) {
+        const item = monitor.getItem();
+        const dropResult = monitor.getDropResult();
+        if (dropResult) {
+            alert(`You dropped ${item.id} into ${dropResult.pos}!`);
+        }
+    },
+}, (connect, monitor) => {
+    return {
+        connectDragSource: connect.dragSource(),
+        isDragging: monitor.isDragging(),
+    };
+})(Piece);
