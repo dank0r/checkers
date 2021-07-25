@@ -34,13 +34,13 @@ function App() {
     let id = 1;
     for(let i = 0; i < 24; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i});
             id++;
         }
     }
     for(let i = 40; i < 64; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i});
             id++;
         }
     }
@@ -57,11 +57,17 @@ function App() {
         setPiecesState(piecesState.map(p => p.id === id ? {...p, pos} : p));
     }
 
+    function setDragging(id, val) {
+        setPiecesState(piecesState.map(p => p.id === id ? {...p, isDragging: val, startPos: val ? p.startPos : p.pos} : p));
+        // if(val === false) {
+        //     setPiecesState(piecesState.map(p => p.id === id ? {...p, prevPos: -100} : p));
+        // }
+    }
 
     return (
         <DndProvider backend={HTML5Backend}>
             <div className={styles.wrapper}>
-                <Board movePiece={movePiece} boardState={boardState} piecesState={piecesState} />
+                <Board movePiece={movePiece} setDragging={setDragging} boardState={boardState} piecesState={piecesState} />
             </div>
         </DndProvider>
     );
