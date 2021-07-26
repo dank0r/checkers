@@ -3,7 +3,7 @@ import styles from './index.module.css';
 import {Motion, spring} from 'react-motion';
 import { DragSource, DropTarget } from 'react-dnd';
 
-function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget, setDragging, piecesState}) {
+function Piece({id, pos, color, isKing, move, isDragging, connectDragSource, connectDropTarget, setDragging, piecesState, whoseMove}) {
     // console.log(isDragging);
     // useEffect(() => {
     //     setDragging(id);
@@ -37,6 +37,7 @@ function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget,
                     style={{
                         backgroundColor: id > 12 ? 'white' : 'black',
                         borderColor: id > 12 ? 'black' : 'white',
+                        cursor: whoseMove === color ? 'grab' : 'not-allowed',
                         // top: `${x}px`,
                         WebkitTransform: `translate3d(${x}px, 0, 0) scale(${scale})`,
                         transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
@@ -45,7 +46,7 @@ function Piece({id, pos, move, isDragging, connectDragSource, connectDropTarget,
                         className={styles.inner}
                         style={{
                             backgroundColor: id > 12 ? 'white' : 'black',
-                            borderColor: id > 12 ? 'black' : 'white'
+                            borderColor: isKing ? 'red' : (color === 'white' ? 'black' : 'white')
                         }}/>
                 </div>))
             }
@@ -59,6 +60,9 @@ const Wrapper = DragSource('piece2square', {
         props.setDragging(props.id, true);
         // console.log('position:', props.pos);
         return { id: props.id, pos: props.pos };
+    },
+    canDrag: (props) => {
+        return props.whoseMove === props.color;
     },
     endDrag(props, monitor) {
         props.setDragging(props.id, false);
