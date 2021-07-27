@@ -3,4 +3,5 @@
     display: flex;
     flex-wrap: wrap;
     max-width: calc(80px * 8 + 50px);
+    max-height: calc(80px * 8 + 50px);
 }
