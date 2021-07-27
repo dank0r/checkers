@@ -1,10 +1,12 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
+import {useSynchronousState} from '@toolz/use-synchronous-state';
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import styles from './App.module.css';
 import Board from './components/Board'
 import Square from "./components/Square";
-import canDrop from './utils';
+import canDrop from './utils/canDrop';
+import optimalMove from './utils/optimalMove';
 
 function App() {
     let boardState = [];
@@ -35,13 +37,13 @@ function App() {
     let id = 1;
     for(let i = 0; i < 24; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'black', isKing: true});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'black', isKing: false});
             id++;
         }
     }
     for(let i = 40; i < 64; i++) {
         if((i + Math.floor(i/8))%2 === 1) {
-            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'white', isKing: true});
+            piecesInitState.push({id, pos: i, isDragging: false, startPos: i, color: 'white', isKing: false});
             id++;
         }
     }
@@ -49,13 +51,60 @@ function App() {
     const [piecesState, setPiecesState] = useState(piecesInitState);
     const [chainDraftHistory, setChainDraftHistory] = useState([piecesInitState]);
     const [whoseMove, setWhoseMove] = useState('white');
+    const [opponent, setOpponent] = useState('computer');
+    const chainDraftHistoryRef = useRef();
+    const piecesStateRef = useRef();
+
+    useEffect(() => {
+        console.log('chainDraftHistory', chainDraftHistory);
+        chainDraftHistoryRef.current = chainDraftHistory;
+    }, [chainDraftHistory]);
+    useEffect(() => {
+        piecesStateRef.current = piecesState;
+        console.log('piecesState', piecesState);
+    }, [piecesState]);
 
     useEffect(() => {
         setPiecesState(chainDraftHistory[chainDraftHistory.length - 1]);
     }, [chainDraftHistory]);
 
+    useEffect(() => {
+        if(whoseMove === 'black' && opponent === 'computer') {
+            let opMove = optimalMove(piecesState, chainDraftHistory, whoseMove);
+            console.log(opMove);
+            let pieceId = piecesStateRef.current.find(p => p.pos === opMove[0]).id;
+
+            setDragging(pieceId, true);
+            setTimeout(() => {
+                for(let i = 1; i < opMove.length; i++) {
+                    setTimeout(() => {
+                        movePiece(pieceId, opMove[i]);
+                    }, i*200);
+                }
+            }, 200)
+            setTimeout(() => {
+                setDragging(pieceId, false);
+            }, 200 + opMove.length*200);
+
+            // console.log('start dragging');
+            // setTimeout(function() {
+            //     movePiece(12, 30);
+            //     console.log('move piece');
+            //     setTimeout(function() {
+            //         setDragging(12, false);
+            //         console.log('end dragging');
+            //     }.bind(this), 20);
+            // }.bind(this), 20);
+
+
+        }
+    }, [whoseMove]);
+
     function movePiece(id, pos, mode) {
-        let newPiecesState = piecesState.map(p => p.id === id ? {...p, pos} : p);
+        let piecesState = piecesStateRef.current;
+        let chainDraftHistory = chainDraftHistoryRef.current;
+        console.log('input piecesState:', piecesState);
+        let newPiecesState = piecesState.map(p => p.id === id ? {...p, pos, isDragging: true} : p);
         // decompose king's path into simple paths of size 1 (or 2 when capturing)
         // if(piecesState.find(p => p.id === id).isKing && mode !== 'atomic') {
         //     let xFrom = piecesState.find(p => p.id === id).pos % 8;
@@ -83,7 +132,9 @@ function App() {
         //     }
         //     return;
         // }
-
+        if(newPiecesState.every(p => !p.isDragging)) {
+            console.log('some shit happened');
+        }
         // if this draft move is extended
         if([(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => pos + n === piecesState.find(p => p.id === id).pos)) {
             if(pos + (+8 +1)*2 === piecesState.find(p => p.id === id).pos) {
@@ -99,6 +150,7 @@ function App() {
                 newPiecesState = newPiecesState.map(p => p.pos === pos + (-8 -1) ? {...p, pos: p.color === 'black' ? 100 : 200} : p)
             }
         }
+
         if(piecesState.find(p => p.id === id).color === 'black' && pos >= 56 && pos <= 63) {
             newPiecesState = newPiecesState.map(p => p.id === id ? {...p, isKing: true} : p);
         }
@@ -107,9 +159,10 @@ function App() {
         }
         // if this draft move is rollback to the previous
         if(chainDraftHistory.length >= 2 && chainDraftHistory[chainDraftHistory.length - 2].find(p => p.id === id).pos === pos) {
-            setChainDraftHistory(chainDraftHistory.slice(0, -1));
+            setChainDraftHistory(chainDraftHistory => chainDraftHistory.slice(0, -1));
         } else {
-            setChainDraftHistory(chainDraftHistory.concat([newPiecesState]));
+            console.log('so ok, concat happened');
+            setChainDraftHistory(chainDraftHistory => chainDraftHistory.concat([newPiecesState]));
         }
         // if this draft move is extended
         // if([(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => pos + n === piecesState.find(p => p.id === id).pos)) {
@@ -127,9 +180,14 @@ function App() {
     }
 
     function setDragging(id, val) {
+        let piecesState = piecesStateRef.current;
+        let chainDraftHistory = chainDraftHistoryRef.current;
+        console.log(`setDragging(${id}, ${val})`);
+        console.log('chainDraftHistory', chainDraftHistory.length);
         let newPiecesState = piecesState.map(p => p.id === id ? {...p, isDragging: val, startPos: val ? p.startPos : p.pos} : p);
-        setChainDraftHistory(chainDraftHistory.map((h, i) => i === chainDraftHistory.length - 1 ? newPiecesState : h));
+        setChainDraftHistory(chainDraftHistory => chainDraftHistory.map((h, i) => i === chainDraftHistory.length - 1 ? newPiecesState : h));
         if(val === false && chainDraftHistory.length > 1) {
+            console.log('end move');
             setChainDraftHistory([newPiecesState]);
             setWhoseMove(whoseMove === 'white' ? 'black' : 'white');
         }

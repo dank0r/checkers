@@ -1,7 +1,7 @@
 import Piece from '../Piece';
 import { DropTarget } from 'react-dnd';
 import styles from './index.module.css';
-import canDrop from '../../utils';
+import canDrop from '../../utils/canDrop';
 
 
 

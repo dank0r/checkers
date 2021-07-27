@@ -8,7 +8,7 @@ export default function canDrop(props) {
     }
     let isChain = false;
     let prevExtended = false;
-    if(props.chainDraftHistory?.length >= 2 && [(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => piece?.pos + n === props.chainDraftHistory[props.chainDraftHistory.length - 2].find(p => p.id === piece.id).pos)) {
+    if(props.chainDraftHistory?.length >= 2 && [(+8 +1)*2, (+8 -1)*2, (-8 +1)*2, (-8 -1)*2].some(n => piece?.pos + n === props.chainDraftHistory[props.chainDraftHistory.length - 2].find(p => p.id === piece?.id)?.pos)) {
         isChain = true;
         prevExtended = props.id === props.chainDraftHistory[props.chainDraftHistory.length - 2].find(p => p.id === piece.id).pos;
     }
@@ -163,7 +163,6 @@ export default function canDrop(props) {
             br_king.push(y*8 + x);
     }
     let kingAttackCells;
-    console.log('kingDirection:', kingDirection);
     if(['ul', 'ur', 'bl', 'br'].every(d => d !== kingDirection)) {
         kingAttackCells = ul_king.concat(ur_king).concat(bl_king).concat(br_king);
     }
