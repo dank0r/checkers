@@ -70,7 +70,7 @@ function App() {
 
     useEffect(() => {
         if(whoseMove === 'black' && opponent === 'computer') {
-            let opMove = optimalMove(piecesState, chainDraftHistory, whoseMove);
+            let opMove = optimalMove(piecesState, chainDraftHistory, whoseMove, 1).chain;
             console.log(opMove);
             let pieceId = piecesStateRef.current.find(p => p.pos === opMove[0]).id;
 

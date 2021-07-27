@@ -214,36 +214,41 @@ function blackScore(piecesState) {
     return piecesState.filter(p => p.pos === 200).length - piecesState.filter(p => p.pos === 100).length;
 }
 
-export default function optimalMove(piecesState, chainDraftHistory, whoseMove) {
+export default function optimalMove(piecesState, chainDraftHistory, whoseMove, difficulty=1) {
     // consider all drafts
     let ourPieces = piecesState.filter(p => p.color === whoseMove);
     let opponentsPieces = piecesState.filter(p => p.color !== whoseMove);
-    let bestMoves = [];
+    let moves = [];
     for(let i = 0; i < ourPieces.length; i++) {
         let piece = ourPieces[i];
         let piecesStateCopy = piecesState.map(p => ({...p}));
         let chainDraftHistoryCopy = chainDraftHistory.map(s => s.map(p => ({...p})));
         [piecesStateCopy, chainDraftHistoryCopy] = setDragging(piece.id, true, piecesStateCopy, chainDraftHistoryCopy);
         let chains = exploreDragging(piecesStateCopy, chainDraftHistoryCopy);
-        if(chains.length > 0) {
-            chains.sort((a, b) => blackScore(a.piecesState) - blackScore(b.piecesState));
-            console.log('chains:', chains);
-            let best = null;
-            if (whoseMove === 'black') {
-                best = chains[chains.length - 1];
-            } else {
-                best = chains[0];
-            }
-            bestMoves.push(best);
+        moves = moves.concat(chains);
+    }
+    if(difficulty === 1) {
+        moves.sort((a, b) => blackScore(a.piecesState) - blackScore(b.piecesState));
+        console.log('bestMoves:', moves);
+        let best = null;
+        if(whoseMove === 'black') {
+            best = moves[moves.length - 1];
+        } else {
+            best = moves[0];
         }
-    }
-    bestMoves.sort((a, b) => blackScore(a.piecesState) - blackScore(b.piecesState));
-    console.log('bestMoves:', bestMoves);
-    let best = null;
-    if(whoseMove === 'black') {
-        best = bestMoves[bestMoves.length - 1];
+        return best;
     } else {
-        best = bestMoves[0];
+        let highestScore = -100;
+        let highestScore_j = -1;
+        for(let j = 0; j < moves.length; j++) {
+            let bestOpponentsMove = optimalMove(moves[j].piecesState, moves[j].chainDraftHistory, whoseMove === 'black' ? 'white' : 'black', difficulty-1);
+            let score = whoseMove === 'black' ? blackScore(bestOpponentsMove.piecesState) : -blackScore(bestOpponentsMove.piecesState);
+            if(score > highestScore) {
+                highestScore = score;
+                highestScore_j = j;
+            }
+        }
+        return moves[highestScore_j];
     }
-    return best.chain;
+
 }
